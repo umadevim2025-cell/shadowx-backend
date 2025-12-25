@@ -1,63 +1,58 @@
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
-import dotenv from "dotenv";
-
-// load pass.env instead of .env
-dotenv.config({ path: "./pass.env" });
 
 const app = express();
-const PORT = 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Health check (very important for Render)
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    service: "ShadowX Backend",
+  });
+});
+
+// Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
     if (!userMessage) {
-      return res.status(400).json({ error: "Message is required" });
+      return res.json({ reply: "No message received." });
     }
 
-    const groqResponse = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are ShadowX AI. Chill, intelligent, human-like. Keep replies concise unless asked."
-            },
-            {
-              role: "user",
-              content: userMessage
-            }
-          ]
-        })
-      }
-    );
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [
+          { role: "system", content: "You are ShadowX AI, calm and helpful." },
+          { role: "user", content: userMessage },
+        ],
+      }),
+    });
 
-    const data = await groqResponse.json();
-
+    const data = await response.json();
     const reply =
-      data?.choices?.[0]?.message?.content ||
-      "ShadowX couldn't generate a reply.";
+      data.choices?.[0]?.message?.content || "No response from AI.";
 
     res.json({ reply });
   } catch (err) {
-    console.error("Backend error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error(err);
+    res.json({ reply: "ShadowX is offline right now." });
   }
 });
 
+// 🚨 THIS IS THE FIX THAT SAVES YOU
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`ShadowX backend running on http://localhost:${PORT}`);
+  console.log("ShadowX backend running on port", PORT);
 });
