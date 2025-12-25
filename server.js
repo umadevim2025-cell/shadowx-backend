@@ -1,58 +1,23 @@
 import express from "express";
-import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check (very important for Render)
+// ✅ ROOT ROUTE (THIS IS THE KEY)
 app.get("/", (req, res) => {
-  res.json({
-    status: "online",
-    service: "ShadowX Backend",
-  });
+  res.status(200).send("ShadowX Backend is running ⚡");
 });
 
-// Chat endpoint
+// example API route
 app.post("/chat", async (req, res) => {
-  try {
-    const userMessage = req.body.message;
-
-    if (!userMessage) {
-      return res.json({ reply: "No message received." });
-    }
-
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          { role: "system", content: "You are ShadowX AI, calm and helpful." },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
-
-    const data = await response.json();
-    const reply =
-      data.choices?.[0]?.message?.content || "No response from AI.";
-
-    res.json({ reply });
-  } catch (err) {
-    console.error(err);
-    res.json({ reply: "ShadowX is offline right now." });
-  }
+  res.json({ reply: "ShadowX online ⚡" });
 });
 
-// 🚨 THIS IS THE FIX THAT SAVES YOU
-const PORT = process.env.PORT || 3000;
+// ✅ MUST listen like this
 app.listen(PORT, () => {
-  console.log("ShadowX backend running on port", PORT);
+  console.log(`Server running on port ${PORT}`);
 });
